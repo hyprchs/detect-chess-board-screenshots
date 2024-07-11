@@ -1,0 +1,3 @@
+[submodule "web-boardimage"]
+	path = web-boardimage
+	url = git@github.com:hyprchs/web-boardimage.git
