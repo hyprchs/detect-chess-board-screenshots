@@ -1,0 +1,4 @@
+chess
+Pillow
+requests
+tqdm
