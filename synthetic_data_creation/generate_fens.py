@@ -12,7 +12,7 @@ start_time = perf_counter()
 with open(input_pgn, 'r') as f:
   strio = io.StringIO(f.read())
 
-MAX_GAMES = 1_000
+MAX_GAMES = 5_000
 games = []
 games_read = 0
 while True:
@@ -49,9 +49,6 @@ fenData = []
 start_time = perf_counter()
 
 while len(fenData) < MAX_FENS:
-    if len(fenData) % 1_000 == 0:
-        print(f'Generated {len(fenData)} FENs')
-
     # Get random game
     game = random.choice(games)
 
@@ -77,6 +74,9 @@ while len(fenData) < MAX_FENS:
         nextFen['check'] = chess.square_name(next(iter(chess.SquareSet(b.kings & b.occupied_co[b.turn]))))
 
     fenData.append(nextFen)
+
+    if len(fenData) % 1_000 == 0:
+        print(f'Generated {len(fenData)} FENs')
 
 with open(output_file, 'w') as f:
   json.dump(fenData, f)
