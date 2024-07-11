@@ -5,7 +5,7 @@ from time import perf_counter
 
 # NOTE - Download and extract one of the `.pgn.zst` files at https://database.lichess.org/
 input_pgn = 'lichess_db_standard_rated_2013-01.pgn'
-output_file = 'fens.txt'
+output_file = 'fens.json'
 
 start_time = perf_counter()
 
@@ -41,26 +41,44 @@ print(f'Read {len(games)} games in {perf_counter() - start_time:.2f} seconds')
 #  - Write the FEN to the `fens_file_path`
 
 import random
+import json
 
-MAX_FENS = 1_000
-fens = []
+MAX_FENS = 10_000
+fenData = []
 
 start_time = perf_counter()
 
-while len(fens) < 10_000:
-  if len(fens) % 1_000 == 0:
-    print(f'Generated {len(fens)} FENs')
-  
-  game = random.choice(games)
-  length = game.end().ply()
-  ply = random.randint(0, length)
-  node = game
-  while node.ply() != ply:
-    node = node.next()
+while len(fenData) < MAX_FENS:
+    if len(fenData) % 1_000 == 0:
+        print(f'Generated {len(fenData)} FENs')
 
-  fens.append(node.board().fen())
+    # Get random game
+    game = random.choice(games)
+
+    # Get random position with equal probability across plies
+    length = game.end().ply()
+    ply = random.randint(0, length)
+    node = game
+    while node.ply() != ply:
+        node = node.next()
+
+    # Add data about this position
+    nextFen = {
+      "fen": node.board().fen(),
+    }
+
+    # Get the last move if we're not in the root node
+    if node.move is not None:
+        nextFen['lastMove'] = node.move.uci()
+
+    # Get the check square if the position is in check
+    b = node.board()
+    if b.is_check():
+        nextFen['check'] = chess.square_name(next(iter(chess.SquareSet(b.kings & b.occupied_co[b.turn]))))
+
+    fenData.append(nextFen)
 
 with open(output_file, 'w') as f:
-  f.write('\n'.join(fens))
+  json.dump(fenData, f)
 
-print(f'Generated {len(fens)} FENs in {perf_counter() - start_time:.2f} seconds')
+print(f'Generated {len(fenData)} FENs in {perf_counter() - start_time:.2f} seconds')
