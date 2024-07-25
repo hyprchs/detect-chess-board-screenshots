@@ -15,7 +15,7 @@ square colors. FEN positions come from the Lichess database of standard rated ga
     python generate_fens.py --input-pgn path/to/extracted.pgn
     ```
 
-1. Run `main.sh` to automatically launch the `web-boardimage` server, which is used to generate PGNs from FENs, and then run `main.py` to generate and save annotated images. Optionally choose how many to generate (defaults to 1000) or specify different output dirs.
+1. Run `main.sh` to automatically launch the `web-boardimage` server, which is used to generate PGNs from FENs, and then run `main.py` to generate and save annotated images. Optionally choose how many to generate (defaults to 1000) or specify different output dirs. The format of the generated bounding boxes is `(x_min, y_min, x_max, y_max)`.
 
 ```sh
 ./main.sh [-n 1000] [--image-output-dir output/images] [--bbox-output-dir output/bounding_boxes]
