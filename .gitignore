@@ -5,3 +5,4 @@
 output/
 data/
 runs/
+!fine_tuning/yolov8n_best.pt
