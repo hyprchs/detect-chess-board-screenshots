@@ -1,2 +1,7 @@
 *.pgn
+*.pt
+*.pth
+*.onnx
 output/
+data/
+runs/
