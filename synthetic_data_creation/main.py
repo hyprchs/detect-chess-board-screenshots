@@ -97,7 +97,7 @@ for i in tqdm(range(args.num)):
             background_image, chessboard_image
         )
 
-        output_image_name = f"synthetic_{i}.png"
+        output_image_name = f"{i:>06}.png"
         save_image_and_bounding_box(overlayed_image, bounding_box, output_image_name)
     except Exception as e:
         print(f"Error generating synthetic image {i}: {e}")
