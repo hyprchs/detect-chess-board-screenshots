@@ -23,9 +23,9 @@ try:
         strio = io.StringIO(f.read())
 except FileNotFoundError:
     print(
-        f"File not found: {args.input_pgn}. Please download a PGN file from https://database.lichess.org/ 
-        and extract it. A very small file can generate a large number of FENs, so ex. try 
-        https://database.lichess.org/standard/lichess_db_standard_rated_2013-01.pgn.zst."
+        f"File not found: {args.input_pgn}. Please download a PGN file from https://database.lichess.org/ "
+        "and extract it. A very small file can generate a large number of FENs, so ex. try "
+        "https://database.lichess.org/standard/lichess_db_standard_rated_2013-01.pgn.zst."
     )
     exit(1)
 
