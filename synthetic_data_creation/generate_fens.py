@@ -14,7 +14,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-OUTPUT_FILE = "fens.json"
+OUTPUT_FILE = "fen_data_list.json"
 
 start_time = perf_counter()
 
