@@ -60,7 +60,7 @@ class WebBoardimageParams(TypedDict):
     orientation: Literal["white", "black"] = "white"
     """`white` or `black`"""
 
-    size: int = 360
+    size: int | None  # Note: API defaults this to 360, but we choose a random size, so leave as `None`
     """The width and height of the image"""
 
     lastMove: str | None
@@ -186,7 +186,6 @@ for i in tqdm(range(args.num)):
     web_boardimage_params = WebBoardimageParams(
         fen=fenData["fen"],
         lastMove=fenData.get("lastMove", None),
-        size=360,
         colors="random",
         orientation=random.choice(("white", "black")),
     )
