@@ -2,7 +2,8 @@ import os
 import random
 from typing import Any, Literal, TypedDict
 import requests
-from PIL import Image
+import cv2
+import numpy as np
 from io import BytesIO
 from tqdm import tqdm
 import json
@@ -11,7 +12,6 @@ import argparse
 # Directories and file paths
 BACKGROUND_IMAGES_DIR = "resized_images/"
 FENS_FILE_PATH = "fen_data_list.json"
-
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
@@ -95,44 +95,62 @@ def sample_fen() -> FenData:
     return random.choice(fen_data_list)
 
 
-def generate_chessboard_image(params: dict[str, Any]) -> Image.Image:
+def generate_chessboard_image(params: dict[str, Any]) -> np.ndarray:
     """Generate a chessboard image using the FEN data."""
-    # First we need to url-encode the FEN
     response = requests.get(f"http://127.0.0.1:8080/board.png", params=params)
     if response.status_code == 200:
-        return Image.open(BytesIO(response.content))
+        chessboard_image = np.asarray(bytearray(response.content), dtype="uint8")
+        chessboard_image = cv2.imdecode(chessboard_image, cv2.IMREAD_UNCHANGED)
+        return chessboard_image
     else:
         raise Exception("Failed to generate chessboard image")
 
 
 def overlay_images(
-    background_image: Image.Image, chessboard_image: Image.Image
-) -> Image.Image:
+    background_image: np.ndarray, chessboard_image: np.ndarray
+) -> tuple[np.ndarray, tuple[int, int, int, int]]:
     """Overlay the chessboard image on the background image."""
-    bg_width, bg_height = background_image.size
+    bg_height, bg_width, _ = background_image.shape
     min_size = min(bg_width, bg_height) // 4
     size = random.randint(min_size, min(bg_width, bg_height) - 1)
-    chessboard_image = chessboard_image.resize((size, size))
+    chessboard_image = cv2.resize(
+        chessboard_image, (size, size), interpolation=cv2.INTER_AREA
+    )
 
     max_x = bg_width - size
     max_y = bg_height - size
     x = random.randint(0, max_x)
     y = random.randint(0, max_y)
 
-    background_image.paste(chessboard_image, (x, y), chessboard_image.convert("RGBA"))
+    # Ensure both images have the same number of channels
+    if background_image.shape[2] == 3:
+        background_image = cv2.cvtColor(background_image, cv2.COLOR_BGR2BGRA)
+    if chessboard_image.shape[2] == 3:
+        chessboard_image = cv2.cvtColor(chessboard_image, cv2.COLOR_BGR2BGRA)
 
-    return background_image, (x, y, x + size, y + size)
+    # Overlay the images
+    overlay = background_image.copy()
+    alpha_s = chessboard_image[:, :, 3] / 255.0
+    alpha_l = 1.0 - alpha_s
+
+    for c in range(0, 3):
+        overlay[y : y + size, x : x + size, c] = (
+            alpha_s * chessboard_image[:, :, c]
+            + alpha_l * overlay[y : y + size, x : x + size, c]
+        )
+
+    return overlay, (x, y, x + size, y + size)
 
 
 def save_image_and_annotation_info(
-    image: Image.Image,
-    bounding_box: tuple[float, float, float, float],
+    image: np.ndarray,
+    bounding_box: tuple[int, int, int, int],
     metadata: dict[str, str],
     image_name: str,
 ) -> None:
     # Save image
     output_image_filepath = os.path.join(args.image_output_dir, image_name)
-    image.save(output_image_filepath)
+    cv2.imwrite(output_image_filepath, image)
 
     # Save bounding box
     bounding_box_filepath = os.path.join(
@@ -148,7 +166,7 @@ def save_image_and_annotation_info(
         args.metadata_output_dir, image_name.replace(".png", ".txt")
     )
     with open(metadata_filepath, "w") as f:
-        json.dump(metadata, f, separators=(',', ':'))
+        json.dump(metadata, f)
 
 
 # Main script logic
@@ -157,7 +175,7 @@ for i in tqdm(range(args.num)):
     background_image_path = os.path.join(
         BACKGROUND_IMAGES_DIR, background_image_name
     )
-    background_image = Image.open(background_image_path).convert("RGBA")
+    background_image = cv2.imread(background_image_path, cv2.IMREAD_UNCHANGED)
 
     fenData = sample_fen()
 
