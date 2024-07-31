@@ -1,5 +1,6 @@
 import os
 import random
+import shutil
 from typing import Any, Literal, TypedDict
 import requests
 import cv2
@@ -38,7 +39,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Ensure the output directory exists
+# Delete and recreate output directories
+shutil.rmtree(args.image_output_dir)
+shutil.rmtree(args.bbox_output_dir)
+shutil.rmtree(args.metadata_output_dir)
 os.makedirs(args.image_output_dir, exist_ok=True)
 os.makedirs(args.bbox_output_dir, exist_ok=True)
 os.makedirs(args.metadata_output_dir, exist_ok=True)
