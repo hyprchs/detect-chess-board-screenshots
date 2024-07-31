@@ -98,6 +98,6 @@ while len(fenData) < MAX_FENS:
         print(f"Generated {len(fenData)} FENs")
 
 with open(OUTPUT_FILE, "w") as f:
-    json.dump(fenData, f)
+    json.dump(fenData, f, separators=(',', ':'))
 
 print(f"Generated {len(fenData)} FENs in {perf_counter() - start_time:.2f} seconds")
