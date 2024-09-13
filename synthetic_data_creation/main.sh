@@ -11,6 +11,10 @@ cleanup() {
 # Set the trap to call cleanup on script exit
 trap cleanup EXIT
 
+# Echo the path to the python executable
+echo "Using python executable:"
+which python
+
 # Launch the server in the background
 cd ../web-boardimage
 pipenv run server &

@@ -9,10 +9,48 @@ from io import BytesIO
 from tqdm import tqdm
 import json
 import argparse
+import chess
 
 # Directories and file paths
 BACKGROUND_IMAGES_DIR = "resized_images/"
 FENS_FILE_PATH = "fen_data_list.json"
+PIECE_SETS = [
+    "alpha",
+    "anarcandy",
+    "caliente",
+    "california",
+    "cardinal",
+    "cburnett",
+    "celtic",
+    "chess7",
+    "chessnut",
+    "companion",
+    "cooke",
+    "dubrovny",
+    "fantasy",
+    "fresca",
+    "gioco",
+    "governor",
+    "horsey",
+    "icpieces",
+    "kiwen-suwi",
+    "kosal",
+    "leipzig",
+    "letter",
+    "libra",
+    "maestro",
+    "merida",
+    "monarchy",
+    "mpchess",
+    "pirouetti",
+    "pixel",
+    "reillycraig",
+    "riohacha",
+    "shapes",
+    "spatial",
+    "staunty",
+    "tatiana",
+]
 
 # Parse command line arguments
 parser = argparse.ArgumentParser()
@@ -83,6 +121,44 @@ class WebBoardimageParams(TypedDict):
     )
     """Theme: `wikipedia`, `lichess-brown`, `lichess-blue`, `random` (generate one on the fly)"""
 
+    piece_set: Literal[
+        "alpha",
+        "anarcandy",
+        "caliente",
+        "california",
+        "cardinal",
+        "cburnett",
+        "celtic",
+        "chess7",
+        "chessnut",
+        "companion",
+        "cooke",
+        "dubrovny",
+        "fantasy",
+        "fresca",
+        "gioco",
+        "governor",
+        "horsey",
+        "icpieces",
+        "kiwen-suwi",
+        "kosal",
+        "leipzig",
+        "letter",
+        "libra",
+        "maestro",
+        "merida",
+        "monarchy",
+        "mpchess",
+        "pirouetti",
+        "pixel",
+        "reillycraig",
+        "riohacha",
+        "shapes",
+        "spatial",
+        "staunty",
+        "tatiana",
+    ]
+
 
 # Load the FEN data
 with open(FENS_FILE_PATH, "r") as f:
@@ -110,10 +186,40 @@ def generate_chessboard_image(params: dict[str, Any]) -> np.ndarray:
         raise Exception("Failed to generate chessboard image")
 
 
+def get_square_bounding_boxes(board_bbox: tuple[int, int, int, int], orientation: Literal['white', 'black']) -> dict[chess.Square, tuple[float, float, float, float]]:
+    """
+    Return the bounding boxes of each square on the chessboard given the bounding box of the entire board.
+    """
+    x_min, y_min, x_max, y_max = board_bbox
+    square_width = (x_max - x_min) / 8
+    square_height = (y_max - y_min) / 8
+
+    square_bounding_boxes = {}
+    for square in chess.SQUARES:
+        if orientation == 'white':
+            rank_from_top = 7 - chess.square_rank(square)
+            file_from_left = chess.square_file(square)
+        else:
+            rank_from_top = chess.square_rank(square)
+            file_from_left = 7 - chess.square_file(square)
+
+        x1 = x_min + file_from_left * square_width
+        y1 = y_min + rank_from_top * square_height
+        x2 = x1 + square_width
+        y2 = y1 + square_height
+        square_bounding_boxes[square] = (x1, y1, x2, y2)
+    
+    return square_bounding_boxes
+
+
 def overlay_images(
     background_image: np.ndarray, chessboard_image: np.ndarray
 ) -> tuple[np.ndarray, tuple[int, int, int, int]]:
-    """Overlay the chessboard image on the background image."""
+    """
+    Overlay the chessboard image on the background image, and return the final image, the
+    bounding box of the chessboard, and the mapping of squares to their bounding boxes.
+    The bounding box format is `(x_min, y_min, x_max, y_max)`.
+    """
     bg_height, bg_width, _ = background_image.shape
     min_size = min(bg_width, bg_height) // 4
     size = random.randint(min_size, min(bg_width, bg_height) - 1)
@@ -182,23 +288,29 @@ for i in tqdm(range(args.num)):
     background_image = cv2.imread(background_image_path, cv2.IMREAD_UNCHANGED)
 
     fenData = sample_fen()
+    
+    orientation = random.choice((chess.WHITE, chess.BLACK))
 
     web_boardimage_params = WebBoardimageParams(
         fen=fenData["fen"],
         lastMove=fenData.get("lastMove", None),
-        colors="random",
-        orientation=random.choice(("white", "black")),
+        colors=random.choice(("wikipedia", "lichess-brown", "lichess-blue", "random")),
+        orientation=orientation,
+        pieceSet=random.choice(PIECE_SETS),
+        size=1000,
     )
 
     chessboard_image = generate_chessboard_image(web_boardimage_params)
 
-    overlayed_image, bounding_box = overlay_images(
+    overlayed_image, board_bbox = overlay_images(
         background_image, chessboard_image
     )
 
+    square_bboxes = get_square_bounding_boxes(board_bbox, orientation)
+
     output_image_name = f"{i:>06}.png"
     save_image_and_annotation_info(
-        overlayed_image, bounding_box, web_boardimage_params, output_image_name
+        overlayed_image, board_bbox, web_boardimage_params, output_image_name
     )
 
 print("Synthetic dataset generation complete.")
