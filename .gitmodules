@@ -1,3 +1,6 @@
 [submodule "web-boardimage"]
 	path = web-boardimage
 	url = git@github.com:hyprchs/web-boardimage.git
+[submodule "synthetic_chess_board_dataset"]
+	path = synthetic_chess_board_dataset
+	url = git@github.com:hyprchs/synthetic_chess_board_dataset.git
