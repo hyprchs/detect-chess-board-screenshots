@@ -1,9 +1,10 @@
+__pycache__/
+
+data/
+runs/
+
 *.pgn
 *.pt
 *.pth
 *.onnx
-output/
-data/
-runs/
 !fine_tuning/yolov8n_best.pt
-__pycache__/
